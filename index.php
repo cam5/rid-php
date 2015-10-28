@@ -2,7 +2,7 @@
     include('vendor/autoload.php');
     $stats = new \Cam5\RidPhp\Service\Analyzer(file_get_contents('RID.CAT'));
     $stats->analyze(file_get_contents('friends-pilot-full.txt'));
-    $data = $stats->retrieve_data(array('PRIMARY'));
+    //$data = $stats->retrieve_data(array('PRIMARY'));
 ?>
 <html>
   <head>
