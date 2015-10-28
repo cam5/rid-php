@@ -1,6 +1,6 @@
-<? 
-    include('class.rid.php'); 
-    $stats = new RID(file_get_contents('RID.CAT'));
+<?php
+    include('vendor/autoload.php');
+    $stats = new \Cam5\RidPhp\Service\Analyzer(file_get_contents('RID.CAT'));
     $stats->analyze(file_get_contents('friends-pilot-full.txt'));
     $data = $stats->retrieve_data(array('PRIMARY'));
 ?>
@@ -23,7 +23,7 @@
 
         // Create the data table.
         var data = new google.visualization.DataTable();
-        
+
         <?php $stats->make_data( 'data', $data ); ?>
 
         // Set chart options
