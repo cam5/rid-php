@@ -62,7 +62,7 @@ class Dictionary implements DictionaryInterface
 
     public function normalizeWord($word)
     {
-        //EXAMPLE* (1) --> EXAMPLE*
+        //EXAMPLE* (1) --> EXAMPLE.*
         $word = preg_replace(
             array('/(\(1\))|\s/', '/\*/'),
             array('', '.*'),
