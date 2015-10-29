@@ -43,6 +43,7 @@ class Dictionary implements DictionaryInterface
         $lines = explode("\n", $input);
 
         $this->records = new \DomDocument;
+        $this->records->formatOutput = true;
 
         array_map([$this, 'processLine'], $lines);
 
@@ -73,45 +74,65 @@ class Dictionary implements DictionaryInterface
 
     public function processLine($line)
     {
-        $tabs           = $this->readTabs($line);
-        $word           = $this->normalizeWord($line);
-        $category       = $this->fixTabRead(self::$enum[$tabs], $line);
-        $case           = strtolower($category);
-        $parentCategory = self::$parentEnum[$category];
-        $parentCase     = strtolower($parentCategory);
+        $tabs     = $this->readTabs($line);
+        $word     = $this->normalizeWord($line);
+        $category = $this->fixTabRead(self::$enum[$tabs], $line);
 
         switch ($category) {
             case 'Primary' :
             case 'Secondary' :
             case 'Tertiary' :
                 $node = $this->records->createElement($word);
-
-                // Append to root if primary, else last parent-level node.
-                if ('None' === $parentCategory) {
-                  $this->temporaryValues->$case = $this->records->appendChild($node);
-                } else {
-                  $this->temporaryValues->$case = $this->temporaryValues->$parentCase->appendChild($node);
-                }
-
-                // Label for querying by level, later.
-                $this->temporaryValues->$case->setAttribute('level', $case);
-
+                $this->handleCategoryNode($node, $category);
                 break;
 
             case 'Word' :
                 $node = $this->records->createElement('term', $word);
                 $originalCategory = self::$enum[$tabs];
-
-                if ('Tertiary' === $originalCategory) {
-                  $this->temporaryValues->primary->appendChild($node);
-                } else {
-                  $this->temporaryValues->secondary->appendChild($node);
-                }
-
-                $firstLetter = substr($word, 0, 1);
-                $this->alphadex[$firstLetter][] = $word;
+                $this->handleTermNode($node, $word, $category, $originalCategory);
                 break;
         }
+    }
+
+    public function handleCategoryNode(\DOMNode $node, $category)
+    {
+        $parentCategory = self::$parentEnum[$category];
+
+        // Append to root if primary, else last parent-level node.
+        if ('None' === $parentCategory) {
+            $this->temporaryValues->$category = $this->records->appendChild($node);
+        } else {
+            $this->temporaryValues->$category = $this->temporaryValues->$parentCategory->appendChild($node);
+        }
+
+        // Label for querying by level, later.
+        $this->temporaryValues->$category->setAttribute('level', $category);
+    }
+
+    public function handleTermNode(\DOMNode $node, $word, $category, $originalCategory)
+    {
+        $targetCategory = $this->getTargetCategory($word, $category, $originalCategory);
+
+        $this->temporaryValues->$targetCategory->appendChild($node);
+
+        $firstLetter = substr($word, 0, 1);
+
+        $this->alphadex[$firstLetter][] = $word;
+    }
+
+    public function getTargetCategory($word, $category, $originalCategory)
+    {
+        $parentCategory = self::$parentEnum[$category];
+
+        if ($category !== $originalCategory) {
+            $targetCategory = ('Tertiary' === $originalCategory)
+                ? 'Primary'
+                : 'Secondary';
+        } else {
+            $targetCategory = $parentCategory;
+        }
+
+        return $targetCategory;
     }
 
     public function fixTabRead($category, $line)
@@ -124,6 +145,8 @@ class Dictionary implements DictionaryInterface
 
       if (preg_match($wordPattern, $line)) {
           return 'Word';
+      } else {
+          return $category;
       }
     }
 

@@ -39,13 +39,13 @@ class Analyzer
         $first_letter = substr($word, 0, 1);
         $first_letter = ctype_upper($first_letter) ? $first_letter : strtoupper($first_letter) ;
 
-        $tags = $this->tree->alpha[$first_letter];
+        // $tags = $this->tree->alpha[$first_letter];
 
-        foreach ($tags as $term) {
-            if (preg_match('/^(' . $term->nodeValue . ')$/i', $word)) {
-                return $term;
-            }
-        }
+        //foreach ($tags as $term) {
+        //    if (preg_match('/^(' . $term->nodeValue . ')$/i', $word)) {
+        //        return $term;
+        //    }
+        //}
 
     }
 
