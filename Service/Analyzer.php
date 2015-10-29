@@ -6,6 +6,13 @@ use Cam5\RidPhp\Service\Dictionary;
 
 class Analyzer
 {
+    public $tree;
+
+    public function __construct()
+    {
+        $this->tree->dictionary = new Dictionary();
+    }
+
     public function all_parents($domElement, $function)
     {
         if ($parent = $domElement->parentNode) {
@@ -34,9 +41,11 @@ class Analyzer
 
         $tags = $this->tree->alpha[$first_letter];
 
-        foreach ($tags as $term)
-            if (preg_match('/^(' . $term->nodeValue . ')$/i', $word))
+        foreach ($tags as $term) {
+            if (preg_match('/^(' . $term->nodeValue . ')$/i', $word)) {
                 return $term;
+            }
+        }
 
     }
 
@@ -87,32 +96,4 @@ class Analyzer
         return $data;
 
     }
-
-    public function make_data($object, $array)
-    {
-        extract($array);
-        $columncount = count($columns) - 1;
-
-        foreach ($columns as $column)
-            echo $object . ".addColumn('" . $column['type'] . "', '" . $column['type'] . "');";
-
-        echo $object . ".addRows([";
-
-        foreach ($rows as $row) {
-            echo "[";
-                for ($i = 0; $i <= $columncount; $i++) {
-
-                    if ($i < $columncount)
-                        $cell = $columns[$i]['type'] == 'number' ? $row[$i]."," : "'" . $row[$i] . "'," ;
-
-                    else $cell = $columns[$i]['type'] == 'number' ? $row[$i] : "'" . $row[$i] . "'" ;
-
-                    echo $cell;
-                }
-            echo "],";
-        }
-
-        echo "]);";
-    }
-
 }

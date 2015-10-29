@@ -7,79 +7,128 @@ class Dictionary implements DictionaryInterface
 
     const DEFAULT_RID = 'RID.CAT';
 
-    public $tree;
+    const PRIMARY = 0;
+    const SECONDARY = 1;
+    const TERTIARY = 2;
+    const WORD = 3;
+
+    protected static $enum = [
+        self::PRIMARY => 'Primary',
+        self::SECONDARY => 'Secondary',
+        self::TERTIARY => 'Tertiary',
+        self::WORD => 'Word',
+    ];
+
+    protected static $parentEnum = [
+        'Primary'  => 'None',
+        'Secondary' => 'Primary',
+        'Tertiary' => 'Secondary',
+        'Word' => 'Tertiary',
+    ];
+
+    public $records;
+    public $alphadex = [];
 
     public function __construct($input = null)
     {
-        $dictionarySource = $input ?: $this->getDefaultSource();
-        error_log($dictionarySource);
-        $this->loadDictionary($dictionarySource);
+        $this->temporaryValues = new \stdClass;
+
+        $this->parseDictionary(
+            $input ?: $this->getDefaultSource()
+        );
     }
 
-    public function alphabetize(&$tree, &$node, $letter)
+    public function parseDictionary($input)
     {
-        $tree[$letter][] = $node;
+        $lines = explode("\n", $input);
+
+        $this->records = new \DomDocument;
+
+        array_map([$this, 'processLine'], $lines);
+
+        $this->clearTemporaryValues();
     }
 
-    public function loadDictionary($file)
+    public function readTabs($input, $maxTabs = 3)
     {
-        $linebyline = explode("\n", $file);
-
-        $dictionary = new \DOMDocument;
-        $dictionary->formatOutput = true;
-
-        foreach ($linebyline as $line) {
-
-            for ($t = 3; $t > -1; $t--) {
-                if (preg_match("/^(\t{".$t."}\w)/", $line))
-                    $tabs = $t;
-            }
-
-            //EXAMPLE* (1) --> EXAMPLE.*
-            $word = preg_replace(
-                array( "/(\(1\))|\s/", "/\*/" ),
-                array( "", ".*" ),
-                $line);
-
-            switch ($tabs) {
-                case 0 :
-                    $node = $dictionary->createElement($word);
-                    $primary = $dictionary->appendChild($node);
-                    $primary->setAttribute('level', 'primary');
-
-                    break;
-
-                case 1 :
-                    $node = $dictionary->createElement($word);
-                    $secondary = $primary->appendChild($node);
-                    $secondary->setAttribute('level', 'secondary');
-
-                    break;
-
-                case 2 :
-                    if ( preg_match('/\*|(\(1\))/', $line ) ) {
-                        $node = $dictionary->createElement('term', $word);
-                        $term = $secondary->appendChild($node);
-                        $this->alphabetize($this->tree->alpha, $term, substr($word, 0, 1));
-                    } else {
-                        $node = $dictionary->createElement($word);
-                        $tertiary = $secondary->appendChild($node);
-                        $tertiary->setAttribute('level', 'tertiary');
-                    }
-
-                    break;
-
-                case 3 :
-                    $node = $dictionary->createElement('term', $word);
-                    $term = $tertiary->appendChild($node);
-                    $this->alphabetize($this->tree->alpha, $term, substr($word, 0, 1));
-
-                    break;
+        // Detect the number of tabs in the line
+        for ($t = $maxTabs; $t > -1; $t--) {
+            if (preg_match("/^(\t{".$t.'}\w)/', $input)) {
+                return $t;
             }
         }
+    }
 
-        return $this->tree->dictionary = $dictionary;
+    public function normalizeWord($word)
+    {
+        //EXAMPLE* (1) --> EXAMPLE*
+        $word = preg_replace(
+            array('/(\(1\))|\s/', '/\*/'),
+            array('', '.*'),
+            $word
+        );
 
+        return $word;
+    }
+
+    public function processLine($line)
+    {
+        $tabs           = $this->readTabs($line);
+        $word           = $this->normalizeWord($line);
+        $category       = $this->fixTabRead(self::$enum[$tabs], $line);
+        $case           = strtolower($category);
+        $parentCategory = self::$parentEnum[$category];
+        $parentCase     = strtolower($parentCategory);
+
+        switch ($category) {
+            case 'Primary' :
+            case 'Secondary' :
+            case 'Tertiary' :
+                $node = $this->records->createElement($word);
+
+                // Append to root if primary, else last parent-level node.
+                if ('None' === $parentCategory) {
+                  $this->temporaryValues->$case = $this->records->appendChild($node);
+                } else {
+                  $this->temporaryValues->$case = $this->temporaryValues->$parentCase->appendChild($node);
+                }
+
+                // Label for querying by level, later.
+                $this->temporaryValues->$case->setAttribute('level', $case);
+
+                break;
+
+            case 'Word' :
+                $node = $this->records->createElement('term', $word);
+                $originalCategory = self::$enum[$tabs];
+
+                if ('Tertiary' === $originalCategory) {
+                  $this->temporaryValues->primary->appendChild($node);
+                } else {
+                  $this->temporaryValues->secondary->appendChild($node);
+                }
+
+                $firstLetter = substr($word, 0, 1);
+                $this->alphadex[$firstLetter][] = $word;
+                break;
+        }
+    }
+
+    public function fixTabRead($category, $line)
+    {
+      if ('Tertiary' !== $category) {
+          return $category;
+      }
+
+      $wordPattern = '/\*|(\(1\))/';
+
+      if (preg_match($wordPattern, $line)) {
+          return 'Word';
+      }
+    }
+
+    public function clearTemporaryValues() {
+        unset($this->temporaryValues);
     }
 
     public function validateRidString($fileString)
