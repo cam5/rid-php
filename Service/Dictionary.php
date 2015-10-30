@@ -31,11 +31,16 @@ class Dictionary implements DictionaryInterface
 
     public function __construct($input = null)
     {
-        $this->temporaryValues = new \stdClass;
+        $this->initTemporaryValues();
 
         $this->parseDictionary(
             $input ?: $this->getDefaultSource()
         );
+    }
+
+    public function initTemporaryValues()
+    {
+        $this->temporaryValues = new \stdClass;
     }
 
     public function parseDictionary($input)
