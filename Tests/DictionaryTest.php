@@ -6,22 +6,30 @@ use Cam5\RidPhp\Service\Dictionary;
 
 class DictionaryTest extends \PHPUnit_Framework_TestCase
 {
+
+    /**
+     * @before
+     */
+    public function setupSomeFixtures()
+    {
+        $this->d = new Dictionary();
+    }
+
     /**
      * @covers \Cam5\RidPhp\Service\Dictionary::initTemporaryValues
      * @covers \Cam5\RidPhp\Service\Dictionary::clearTemporaryValues
      */
     public function testClearTemporaryValues()
     {
-        $dictionary = new Dictionary();
-        $dictionary->initTemporaryValues();
+        $this->d->initTemporaryValues();
 
-        $this->assertInstanceOf('stdClass', $dictionary->temporaryValues);
+        $this->assertInstanceOf('stdClass', $this->d->temporaryValues);
 
-        $dictionary->temporaryValues->foo = 'bar';
-        $dictionary->clearTemporaryValues();
+        $this->d->temporaryValues->foo = 'bar';
+        $this->d->clearTemporaryValues();
 
         try {
-          $dictionary->temporaryValues->foo;
+          $this->d->temporaryValues->foo;
         } catch (\PHPUnit_Framework_Error_Notice $e) {
           return;
         }
@@ -34,8 +42,7 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetDefaultSource()
     {
-        $dictionary       = new Dictionary();
-        $dictionarySource = $dictionary->getDefaultSource();
+        $dictionarySource = $this->d->getDefaultSource();
         $ridFile          = file_get_contents(dirname(__FILE__) . '/../Resource/RID.CAT');
 
         $this->assertEquals($ridFile, $dictionarySource);
