@@ -28,5 +28,17 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
 
         $this->fail('clearTemporaryValues did not clear the values it said it would.');
     }
+
+    /**
+     * @covers \Cam5\RidPhp\Service\Dictionary::getDefaultSource
+     */
+    public function testGetDefaultSource()
+    {
+        $dictionary       = new Dictionary();
+        $dictionarySource = $dictionary->getDefaultSource();
+        $ridFile          = file_get_contents(dirname(__FILE__) . '/../Resource/RID.CAT');
+
+        $this->assertEquals($ridFile, $dictionarySource);
+    }
 }
 
