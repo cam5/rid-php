@@ -15,6 +15,9 @@
         <whitelist>
             <directory>./Service</directory>
             <directory>./Resource</directory>
+            <exclude>
+                <file>./Service/DictionaryInterface.php</file>
+            </exclude>
         </whitelist>
     </filter>
 </phpunit>
