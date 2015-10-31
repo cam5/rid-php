@@ -47,5 +47,38 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals($ridFile, $dictionarySource);
     }
+
+    /**
+     * @covers \Cam5\RidPhp\Service\Dictionary::getDefaultSource
+     */
+    public function testFixTabRead()
+    {
+        $this->assertEquals(
+            'Primary',
+            $this->d->fixTabRead('Primary', "\tCATEGORYNAME")
+        );
+
+        $this->assertEquals(
+            'Secondary',
+            $this->d->fixTabRead('Secondary', "\t\tCATEGORYNAME")
+        );
+
+        $this->assertEquals(
+            'Tertiary',
+            $this->d->fixTabRead('Tertiary', "\t\t\tCATEGORYNAME")
+        );
+
+        // The fix-case. Then it's a word, that was identified as a tertiary category.
+        $this->assertEquals(
+            'Word',
+            $this->d->fixTabRead('Tertiary', "\t\tWORDNAME (1)")
+        );
+
+        // A lark; it's only looking to fix tertiary terms that might misidentify.
+        $this->assertEquals(
+            'Secondary',
+            $this->d->fixTabRead('Secondary', "\t\tWORDNAME (1)")
+        );
+    }
 }
 
