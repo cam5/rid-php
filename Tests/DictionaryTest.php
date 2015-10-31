@@ -80,5 +80,31 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
             $this->d->fixTabRead('Secondary', "\t\tWORDNAME (1)")
         );
     }
+
+    /**
+     * @covers \Cam5\RidPhp\Service\Dictionary::getTargetCategory
+     */
+    public function testGetTargetCategory()
+    {
+        $this->assertEquals(
+            'Primary',
+            $this->d->getTargetCategory('Apple', 'Secondary', 'Secondary')
+        );
+
+        $this->assertEquals(
+            'Secondary',
+            $this->d->getTargetCategory('Banana', 'Tertiary', 'Tertiary')
+        );
+
+        $this->assertEquals(
+            'Secondary',
+            $this->d->getTargetCategory('Crabappble', 'Tertiary', 'Word')
+        );
+
+        $this->assertEquals(
+            'None',
+            $this->d->getTargetCategory('Dragonfruit', 'Primary', 'Primary')
+        );
+    }
 }
 
