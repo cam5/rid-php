@@ -29,6 +29,7 @@ class Dictionary implements DictionaryInterface
     public $records;
     public $alphadex = [];
 
+    /** @codeCoverageIgnore **/
     public function __construct($input = null)
     {
         $this->initTemporaryValues();
