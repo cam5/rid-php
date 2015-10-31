@@ -44,12 +44,19 @@ class Dictionary implements DictionaryInterface
         $this->temporaryValues = new \stdClass;
     }
 
+    public function initRecords()
+    {
+        $this->records = new \DomDocument;
+        $this->records->formatOutput = true;
+
+        return $this->records;
+    }
+
     public function parseDictionary($input)
     {
         $lines = explode("\n", $input);
 
-        $this->records = new \DomDocument;
-        $this->records->formatOutput = true;
+        $this->initRecords();
 
         array_map([$this, 'processLine'], $lines);
 
@@ -106,13 +113,17 @@ class Dictionary implements DictionaryInterface
 
         // Append to root if primary, else last parent-level node.
         if ('None' === $parentCategory) {
-            $this->temporaryValues->$category = $this->records->appendChild($node);
+            $this->temporaryValues->$category = $this->records->appendChild(
+                $this->records->importNode($node)
+            );
         } else {
             $this->temporaryValues->$category = $this->temporaryValues->$parentCategory->appendChild($node);
         }
 
         // Label for querying by level, later.
         $this->temporaryValues->$category->setAttribute('level', $category);
+
+        return $this->temporaryValues->$category;
     }
 
     public function handleTermNode(\DOMNode $node, $word, $category, $originalCategory)

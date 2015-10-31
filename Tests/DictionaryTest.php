@@ -49,7 +49,7 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Cam5\RidPhp\Service\Dictionary::getDefaultSource
+     * @covers \Cam5\RidPhp\Service\Dictionary::fixTabRead
      */
     public function testFixTabRead()
     {
@@ -105,6 +105,55 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
             'None',
             $this->d->getTargetCategory('Dragonfruit', 'Primary', 'Primary')
         );
+    }
+
+    /**
+     * @covers \Cam5\RidPhp\Service\Dictionary::initRecords
+     */
+    public function testInitRecords()
+    {
+        $this->d->initTemporaryValues();
+
+        $this->assertInstanceOf('DomDocument', $this->d->records);
+
+        return $this->d->records;
+    }
+
+    /**
+     * @depends testInitRecords
+     * @covers \Cam5\RidPhp\Service\Dictionary::handleCategoryNode
+     */
+    public function testHandleSubCategoryNode($records)
+    {
+        $this->d->initTemporaryValues();
+
+        $nodeName   = 'GLORY';
+        $node       = $records->createElement($nodeName);
+        $parentNode = $this->d->temporaryValues->Primary = $records->createElement('PRIMARY');
+
+        $result = $this->d->handleCategoryNode($node, 'Secondary');
+
+        $this->assertInstanceOf('DomNode', $result);
+        $this->assertEquals($nodeName, $result->nodeName);
+        $this->assertEquals('Secondary', $result->getAttribute('level'));
+    }
+
+    /**
+     * @depends testInitRecords
+     * @covers \Cam5\RidPhp\Service\Dictionary::handleCategoryNode
+     */
+    public function testHandleParentCategoryNode($records)
+    {
+        $this->d->initTemporaryValues();
+
+        $nodeName   = 'PRIMARY';
+        $node       = $records->createElement($nodeName);
+
+        $result = $this->d->handleCategoryNode($node, 'Primary');
+
+        $this->assertInstanceOf('DomNode', $result);
+        $this->assertEquals($nodeName, $result->nodeName);
+        $this->assertEquals('#document', $result->parentNode->nodeName);
     }
 }
 
