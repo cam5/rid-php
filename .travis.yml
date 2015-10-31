@@ -7,3 +7,6 @@ php:
 
 before_script:
   - composer install --prefer-source --no-interaction --dev
+
+after_script:
+  - php vendor/bin/coveralls

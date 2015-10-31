@@ -7,9 +7,14 @@
         </testsuite>
     </testsuites>
 
+    <logging>
+        <log type="coverage-clover" target="build/logs/clover.xml"/>
+    </logging>
+
     <filter>
         <whitelist>
-            <directory>./</directory>
+            <directory>./Service</directory>
+            <directory>./Resource</directory>
         </whitelist>
     </filter>
 </phpunit>
