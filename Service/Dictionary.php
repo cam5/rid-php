@@ -2,7 +2,7 @@
 
 namespace Cam5\RidPhp\Service;
 
-class Dictionary implements DictionaryInterface
+class Dictionary implements DictionaryInterface 
 {
 
     const DEFAULT_RID = 'RID.CAT';
@@ -39,14 +39,20 @@ class Dictionary implements DictionaryInterface
         );
     }
 
+	public function getRecords(){
+		return $this->records;
+	}
+	
     public function initTemporaryValues()
     {
         $this->temporaryValues = new \stdClass;
     }
 
-    public function initRecords()
+    private function initRecords()
     {
         $this->records = new \DomDocument;
+		$this->records->appendChild($this->records->createElement('Dictionary'));
+		
         $this->records->formatOutput = true;
 
         return $this->records;
@@ -76,12 +82,12 @@ class Dictionary implements DictionaryInterface
     public function normalizeWord($word)
     {
         //EXAMPLE* (1) --> EXAMPLE.*
+		$word = trim($word);
         $word = preg_replace(
-            array('/(\(1\))|\s/', '/\*/'),
-            array('', '.*'),
+            array('/(\s\(1\))/', '/\*/', '/\s/'),
+            array('', '.*', '-'),
             $word
         );
-
         return $word;
     }
 
@@ -89,8 +95,8 @@ class Dictionary implements DictionaryInterface
     {
         $tabs     = $this->readTabs($line);
         $word     = $this->normalizeWord($line);
-        $category = $this->fixTabRead(self::$enum[$tabs], $line);
-
+		$category = $this->fixTabRead(self::$enum[$tabs], $line);
+		
         switch ($category) {
             case 'Primary' :
             case 'Secondary' :
@@ -105,15 +111,16 @@ class Dictionary implements DictionaryInterface
                 $this->handleTermNode($node, $word, $category, $originalCategory);
                 break;
         }
+		
     }
 
-    public function handleCategoryNode(\DOMNode $node, $category)
+    private function handleCategoryNode(\DOMNode $node, $category)
     {
         $parentCategory = self::$parentEnum[$category];
-
+		
         // Append to root if primary, else last parent-level node.
         if ('None' === $parentCategory) {
-            $this->temporaryValues->$category = $this->records->appendChild(
+            $this->temporaryValues->$category = $this->records->getElementsByTagName('Dictionary')->item(0)->appendChild(
                 $this->records->importNode($node)
             );
         } else {
@@ -126,27 +133,28 @@ class Dictionary implements DictionaryInterface
         return $this->temporaryValues->$category;
     }
 
-    public function handleTermNode(\DOMNode $node, $word, $category, $originalCategory)
+    private function handleTermNode(\DOMNode $node, $word, $category, $originalCategory)
     {
         $targetCategory = $this->getTargetCategory($word, $category, $originalCategory);
-
         $this->temporaryValues->$targetCategory->appendChild($node);
 
         $firstLetter = substr($word, 0, 1);
 
-        $this->alphadex[$firstLetter][] = $word;
+        $this->alphadex[$firstLetter][] = $node;
     }
 
+	public function getTermsByLetter($letter){
+		return $this->alphadex[$letter];
+	}
+	
     public function getTargetCategory($word, $category, $originalCategory)
     {
-        $parentCategory = self::$parentEnum[$category];
-
         if ($category !== $originalCategory) {
             $targetCategory = ('Tertiary' === $originalCategory)
-                ? 'Primary'
-                : 'Secondary';
+                ? 'Secondary'
+                : 'Primary';
         } else {
-            $targetCategory = $parentCategory;
+			$targetCategory = self::$parentEnum[$category];
         }
 
         return $targetCategory;
